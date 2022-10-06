@@ -1,0 +1,106 @@
+using TestingBasic;
+using Xunit;
+namespace TestingBasics.Test;
+
+public class ShoppingCartTest
+{
+    public class DbServiceMock : IDbService
+    {
+        public bool ProcessResult { get; set; }
+        public Product? ProductBeingProcessed {get;set;}
+        public int ProductIdBeingProcessed { get; set; }
+
+        public bool RemoveShoppingCartItem(int? id)
+        {
+            if(id != null)
+            ProductIdBeingProcessed = Convert.ToInt32(id);
+            return ProcessResult;
+        }
+
+        public bool SaveShoppingCartItem(Product prod)
+        {
+            ProductBeingProcessed = prod;
+            return ProcessResult;
+        }
+    }
+
+    [Fact]
+    public void AddProductShouldReturnTrueWhenAddingProduct()
+    {
+        var dbMock = new DbServiceMock();
+        dbMock.ProcessResult = true;
+        // Arrange
+        ShoppingCart shoppingCart = new (dbMock);
+
+        // Act
+        var product = new Product(1, "Shoes", 200);
+        var result = shoppingCart.AddProduct(product);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(product, dbMock.ProductBeingProcessed);
+    }
+
+    [Fact]
+    public void AddProductShouldReturnFalseWhenAddingProductFails()
+    {
+         var dbMock = new DbServiceMock();
+        dbMock.ProcessResult = false;
+
+        // Arrange
+        ShoppingCart shoppingCart = new (dbMock);
+
+        // Act
+        var result = shoppingCart.AddProduct(null);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void DeleteProductShouldReturnTrueWhenRemovingProductHasDone()
+    {
+        var dbMock = new DbServiceMock();
+        dbMock.ProcessResult = true;
+        // Arrange
+        ShoppingCart shoppingCart = new (dbMock);
+
+        // Act
+        var product = new Product(1, "Shoes", 200);
+        var result = shoppingCart.DeleteProduct(product.Id);
+
+        // Assert
+        Assert.True(result);
+        Assert.Equal(product.Id, dbMock.ProductIdBeingProcessed);
+    }
+
+    [Fact]
+    public void DeleteProductShouldReturnFalseWhenRemovingProductHasNotDone()
+    {
+        var dbMock = new DbServiceMock();
+        dbMock.ProcessResult = false;
+        // Arrange
+        ShoppingCart shoppingCart = new (dbMock);
+
+        // Act
+        var result = shoppingCart.DeleteProduct(null);
+
+        // Assert
+        Assert.False(result);
+    }
+
+    [Fact]
+    public void DeleteProductShouldReturnFalseWhenProductIdIsInvalid()
+    {
+        var dbMock = new DbServiceMock();
+        dbMock.ProcessResult = false;
+        // Arrange
+        ShoppingCart shoppingCart = new (dbMock);
+
+        // Act
+        var result = shoppingCart.DeleteProduct(0);
+
+        // Assert
+        Assert.False(result);
+    }
+}
